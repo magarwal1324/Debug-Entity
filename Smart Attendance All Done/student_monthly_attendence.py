@@ -1,0 +1,189 @@
+#import module
+from  tkinter import *
+from calendar import monthrange
+import datetime
+from tkinter import ttk
+from PIL import ImageTk
+import connection
+btn_state_monthly_view=0
+
+class student_monthly_attendence:
+    def __init__(self,student_monthly_attendence_root,reg_no):
+        global title1
+        self.student_monthly_attendence_root=student_monthly_attendence_root
+        self.student_monthly_attendence_root.title("Student Monthly Attendence")
+        self.student_monthly_attendence_root.geometry("600x300+30+55")
+        self.student_monthly_attendence_root.iconbitmap("images\\software_icon.ico")
+        self.student_monthly_attendence_root.resizable(0,0)
+        self.student_monthly_attendence_root.configure(bg='lightgray')
+        self.student_monthly_attendence_root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.month_values=['January','February','March','April','May','June','July','August','September','October','November','December']
+        self.reg_no=reg_no
+
+        self.reverse_image=PhotoImage(file="images/reverse.png")
+        self.forward_image=PhotoImage(file="images/forward.png")
+
+        self.now = datetime.datetime.now()
+        self.day=self.now.day
+        self.month=self.now.month
+        self.year=self.now.year
+
+        # Fetching details as per registration number
+        cur=connection.connection()
+        self.get_attendence_details_student=cur.execute("Select * from student_details where registration_number=%s ",(reg_no))
+        self.get_attendence_details_student_row = cur.fetchall()
+        self.registration_number=self.get_attendence_details_student_row[0][0]
+        self.student_department=self.get_attendence_details_student_row[0][2]
+        self.student_year=self.get_attendence_details_student_row[0][3]
+
+        self.make_tree()
+
+    def on_closing(self):
+        global student_monthly_attendence_root,btn_state_monthly_view
+        btn_state_monthly_view=0
+        student_monthly_attendence_root.destroy()
+    
+    # Function used for showing previous months attendence details
+    def show_previous_month_details(self):
+        if self.month==1:
+            self.year=int(self.year)-1
+            self.month=12
+        else:
+            self.month=self.month-1
+            if self.month==self.now.month and int(self.year)==self.now.year:
+                self.day=self.now.day
+            else:
+                self.day=monthrange(int(self.year),self.month)[1]
+
+        self.make_tree()
+
+    # Function used for showing next months attendence details
+    def show_next_month_details(self):
+        if self.month == 12 and int(self.year)== self.now.year:
+            False
+        else:
+            if self.month==12:
+                    self.year=int(self.year)+1
+                    self.month=1
+            else:
+                self.month=self.month+1
+                if self.month==self.now.month and int(self.year)==self.now.year:
+                    self.day=self.now.day
+                else:
+                    self.day=monthrange(int(self.year),self.month)[1]
+            
+            self.make_tree()
+        
+    def make_tree(self):
+        yearLabel = Label(self.student_monthly_attendence_root,font="Arial 15",text=f"{self.month_values[self.month-1]} - {self.year}",bg='lightgray')
+        yearLabel.place(x=150,y=50,height=40,width=300)
+
+        previous_btn = Button(self.student_monthly_attendence_root,image=self.reverse_image,command=self.show_previous_month_details)
+        previous_btn.place(x=50,y=50,height=40,width=40)
+
+        next_btn = Button(self.student_monthly_attendence_root,image=self.forward_image,command=self.show_next_month_details)
+        next_btn.place(x=520,y=50,height=40,width=40)
+
+        self.tree=ttk.Treeview(self.student_monthly_attendence_root)
+        self.tree.place(x=50,y=120,height=120,width=500)
+        Scrollbar_x=ttk.Scrollbar(self.student_monthly_attendence_root,orient='horizontal',command=self.tree.xview)
+        Scrollbar_y=ttk.Scrollbar(self.student_monthly_attendence_root,orient='vertical',command=self.tree.yview)
+                
+        s = ttk.Style(self.student_monthly_attendence_root)
+        s.theme_use("clam")
+        s.configure(".", font=('Arial', 12))
+        s.configure("Treeview.Heading", foreground="blue",font=('Arial', 11,"bold"),xscrollcommand=Scrollbar_x.set,yscrollcommand=Scrollbar_y.set)
+                
+        Scrollbar_x.place(x=50,y=240,width=514)
+        Scrollbar_y.place(x=550,y=120,height=134)
+        self.tree.config(xscrollcommand=Scrollbar_x.set)
+        self.tree.config(yscrollcommand=Scrollbar_y.set)
+
+        if self.month > self.now.month:
+            if int(self.year) >= self.now.year:
+                self.make_column()
+            else:
+                self.make_column()
+                self.insert_value()
+        else:         
+            self.make_column()
+            self.insert_value()
+
+    # Make attendence details columns       
+    def make_column(self):
+        for i in range (self.day+2):
+            if i == 0:
+                self.tree["columns"] = self.tree["columns"] + ("slno")
+            elif i == 1:
+                self.tree["columns"] = self.tree["columns"] + ("Registration Number",)
+            else:
+                self.tree["columns"] = self.tree["columns"] + (i-1,)
+
+        self.tree['show']='headings'
+
+        for i in range (self.day+2):
+            if i == 0:
+                self.tree.column("slno", anchor="center",width=50, minwidth=50)
+                self.tree.heading("slno", text="Sl/No")
+            elif i == 1:
+                self.tree.column("Registration Number", anchor="center",width=165, minwidth=165)
+                self.tree.heading("Registration Number", text="Registration Number")
+            else:
+                self.tree.column(i-1, anchor="center",width=100, minwidth=100)
+                self.tree.heading(i-1, text=i-1)
+
+    # Getting table data's
+    def give_me_date(self,i):
+        self.date=''
+        if len(str(i))==1:
+            if len(str(self.month))==1:
+                self.date=str(self.year)+"-0"+str(self.month)+"-0"+str(i-1)
+            else:
+                self.date=str(self.year)+"-"+str(self.month)+"-0"+str(i-1)
+        else:
+            if len(str(self.month))==1:
+                if str(i)=='10' :
+                    self.date=str(self.year)+"-0"+str(self.month)+"-0"+str(i-1)
+                else:
+                    self.date=str(self.year)+"-0"+str(self.month)+"-"+str(i-1)
+            else:
+                if str(i)=='10' :
+                    self.date=str(self.year)+"-0"+str(self.month)+"-0"+str(i-1)
+                else:
+                    self.date=str(self.year)+"-"+str(self.month)+"-"+str(i-1)  
+
+        return self.date; 
+
+    # def insert_value function used to view value's
+    def insert_value(self):
+        self.rows=[]
+        self.rows.append(self.registration_number)
+        j=1
+        val=[]
+        for row in self.rows:
+            for i in range (self.day+2):
+                if i == 0:
+                    val.append(j)
+                elif i == 1:
+                    val.append(self.registration_number)
+                else:
+                    date = self.give_me_date(i)
+
+                    cur = connection.connection()
+                    cur.execute("select attandance from attendance_details where registration_number=%s and date= %s",(self.registration_number,date))
+                    x = cur.fetchall()
+                    if len(x)==0:
+                        val.append("NA")
+                    else:
+                        val.append(x[0][0])
+
+            self.tree.insert('','end',values=tuple(val)) 
+            j+=1
+            val.clear()
+
+def student_monthly_aatendence_main(reg_no):
+    global student_monthly_attendence_root,btn_state_monthly_view
+    student_monthly_attendence_root=Toplevel()
+    btn_state_monthly_view = student_monthly_attendence_root.winfo_exists()
+    obj=student_monthly_attendence(student_monthly_attendence_root,reg_no)
+    student_monthly_attendence_root.mainloop()

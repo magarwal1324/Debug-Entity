@@ -1,5 +1,8 @@
 # Debug-Entity
-hi guys this is team debug entity.
+Hello...This is team debug entity.
+Face Recognition is a computer application that is capable of detecting, tracking, identifying or verifying human faces from an image or video captured using a digital camera. 
+Our Aim is practically implemented in real-life environment as an automatic attendance management system.
+
 
 For running the project we need to have python installed.
 

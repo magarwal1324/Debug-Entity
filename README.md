@@ -1,4 +1,4 @@
-# Debug-Entity
+# Debug-Entity  (Hyland Hackathon)
 <h1 align="center">Hi 👋, This is Our Team Debug Entity.</h1>
 <h3 align="center">A passionate Full Stack Developer from India</h3>
 
